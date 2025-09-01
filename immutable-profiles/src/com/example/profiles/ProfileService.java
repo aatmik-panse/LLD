@@ -1,28 +1,51 @@
 package com.example.profiles;
 
-import java.util.Objects;
-
 /**
- * Assembles profiles with scattered, inconsistent validation.
+ * Profile service that creates immutable UserProfile objects using the Builder pattern.
+ * No longer mutates profiles after creation.
  */
 public class ProfileService {
 
-    // returns a fully built profile but mutates it afterwards (bug-friendly)
+    // Creates a minimal profile with only required fields
     public UserProfile createMinimal(String id, String email) {
-        if (id == null || id.isBlank()) throw new IllegalArgumentException("bad id");
-        if (email == null || !email.contains("@")) throw new IllegalArgumentException("bad email");
-
-        UserProfile p = new UserProfile(id, email);
-        // later code keeps mutating...
-        return p;
+        return UserProfile.builder()
+                .id(id)
+                .email(email)
+                .build(); // Validation happens in builder.build()
     }
 
-    public void updateDisplayName(UserProfile p, String displayName) {
-        Objects.requireNonNull(p, "profile");
+    // Creates a full profile with all fields
+    public UserProfile createFull(String id, String email, String phone, String displayName, 
+                                 String address, boolean marketingOptIn, String twitter, String github) {
+        return UserProfile.builder()
+                .id(id)
+                .email(email)
+                .phone(phone)
+                .displayName(displayName)
+                .address(address)
+                .marketingOptIn(marketingOptIn)
+                .twitter(twitter)
+                .github(github)
+                .build(); // Validation happens in builder.build()
+    }
+
+    // Instead of mutating, return a new profile with updated display name
+    public UserProfile withUpdatedDisplayName(UserProfile original, String displayName) {
+        // Validate display name length
         if (displayName != null && displayName.length() > 100) {
-            // silently trim (inconsistent policy)
-            displayName = displayName.substring(0, 100);
+            throw new IllegalArgumentException("displayName must not exceed 100 characters");
         }
-        p.setDisplayName(displayName); // mutability leak
+        
+        // Create new profile with updated display name, copying all other fields
+        return UserProfile.builder()
+                .id(original.getId())
+                .email(original.getEmail())
+                .phone(original.getPhone())
+                .displayName(displayName) // updated field
+                .address(original.getAddress())
+                .marketingOptIn(original.isMarketingOptIn())
+                .twitter(original.getTwitter())
+                .github(original.getGithub())
+                .build();
     }
 }
